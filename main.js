@@ -1,5 +1,5 @@
 import './style.css';
-import {getDeviceCode} from './authentication';
+import {getDeviceCode, pollForTokens} from './authentication';
 import {createQRCode} from './qr';
 
 const startElement = document.querySelector('#start');
@@ -10,6 +10,17 @@ const canvasElement = document.querySelector('#qr-canvas');
 const userCodeElement = document.querySelector('#user-code');
 
 let codesResponse;
+let tokensResponse;
+
+async function handlePollForTokens() {
+    const pollInterval = setInterval(async () => {
+        const response = await pollForTokens(codesResponse['device_code']);
+        if (response.responseStatus === 200) {
+            tokensResponse = response;
+            clearInterval(pollInterval);
+        } 
+    }, codesResponse.interval * 1000);
+};
 
 async function handleRequestCodes() {
     try {
@@ -20,9 +31,11 @@ async function handleRequestCodes() {
         
         startElement.classList.toggle('hidden');
         codesElement.classList.toggle('hidden');
+
+        handlePollForTokens();
     } catch (error) {
         console.error(error);
     }
-}
+};
 
 loginButtonElement.addEventListener('click', handleRequestCodes);
