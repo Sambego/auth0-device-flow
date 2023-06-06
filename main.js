@@ -1,4 +1,5 @@
 import './style.css';
+import {decodeJwt} from 'jose';
 import {getDeviceCode, pollForTokens} from './authentication';
 import {createQRCode} from './qr';
 
@@ -9,8 +10,14 @@ const codesElement = document.querySelector('#codes');
 const canvasElement = document.querySelector('#qr-canvas');
 const userCodeElement = document.querySelector('#user-code');
 
+const userElement = document.querySelector('#user');
+const userAvatarElement = document.querySelector('#user-avatar');
+const userNameElement = document.querySelector('#user-name');
+const userEmailElement = document.querySelector('#user-email');
+
 let codesResponse;
 let tokensResponse;
+let user;
 
 async function handlePollForTokens() {
     const pollInterval = setInterval(async () => {
@@ -18,6 +25,14 @@ async function handlePollForTokens() {
         if (response.responseStatus === 200) {
             tokensResponse = response;
             clearInterval(pollInterval);
+
+            user = decodeJwt(tokensResponse['id_token']);
+            userAvatarElement.src = user?.picture;
+            userNameElement.innerHTML = `${user?.name} (${user?.nickname})`;
+            userEmailElement.innerHTML = user?.email;
+            codesElement.classList.toggle('hidden');
+            userElement.classList.toggle('hidden');
+
         } 
     }, codesResponse.interval * 1000);
 };
